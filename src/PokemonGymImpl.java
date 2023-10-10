@@ -1,4 +1,4 @@
-import java.util.List;
+import java.util.*;
 
 // Los in deze klasse alle foutmeldingen op door (abstracte) klassen met variabelen en methodes te maken en een interface met methodes (en soms een import).
 public class PokemonGymImpl implements PokemonGym {
@@ -28,6 +28,42 @@ public class PokemonGymImpl implements PokemonGym {
 
     }
 
+    // New method to keep fighting
+    public void continueFighting(PokemonTrainer trainer, Pokemon pokemon, PokemonGymOwner owner, Pokemon ownerPokemon, boolean wasGymPokemonBeat) {
+        Pokemon gymPokemon;
+        Pokemon trainerPokemon;
+        Scanner scanner = new Scanner(System.in);
+        String input = null;
+
+        System.out.println(Main.ANSI_RED + owner.getName() + Main.ANSI_RESET +": So you want to keep fighting then?");
+
+        if (wasGymPokemonBeat) {
+            System.out.println(Main.ANSI_RED + owner.getName() + Main.ANSI_RESET +": Let's see if you can beat this one!");
+            gymPokemon = chooseGymPokemon(owner);
+            System.out.println(Main.ANSI_RED + owner.getName() + Main.ANSI_RESET +": I'll choose you, " + gymPokemon.getName());
+
+            System.out.println("Do you wish to change your pokemon?");
+
+            while (!Objects.equals(input, "y") && !Objects.equals(input, "n")) {
+                System.out.println("press y/n");
+                input = scanner.nextLine();
+            }
+
+
+            if (input.equals("y")) {
+                trainerPokemon = choosePokemon(trainer);
+            } else {
+                trainerPokemon = pokemon;
+            }
+        } else {
+            System.out.println("Select your pokemon.");
+            trainerPokemon = choosePokemon(trainer);
+            gymPokemon = ownerPokemon;
+        }
+
+        fightRound(trainer, owner, trainerPokemon, gymPokemon);
+    }
+
     @Override
     public void printPokemon(List<Pokemon> pokemons) {
         for (Pokemon p : pokemons) {
@@ -54,6 +90,7 @@ public class PokemonGymImpl implements PokemonGym {
 
             System.out.println("Its " + owner.getName() + "'s turn to attack");
             gymOwnerAttacks(gymPokemon, pokemon);
+            // FOUND BUG: Trainer pokemon can still attack once more after fainting!!
             System.out.println("Its " + trainer.getName() + "'s turn to attack");
             attackOrChange(pokemon, gymPokemon, trainer, owner);
 
@@ -64,10 +101,16 @@ public class PokemonGymImpl implements PokemonGym {
             System.out.println(pokemon.getName() + " has defeated " + gymPokemon.getName());
         }
 
-        System.out.println("Would you like to keep playing? yes or no");
+        System.out.println("Would you like to keep playing? enter y for yes or n for no");
         String keepPlaying = speler_A.nextLine();
-        if (keepPlaying.equals("yes")){
-            enteredTheGym(trainer);
+        if (keepPlaying.equals("y")){
+            // enteredTheGym(trainer);
+            // New functionality to keep playing:
+            if (gymPokemon.getHp() <= 0) {
+                continueFighting(trainer, pokemon, owner, gymPokemon, true);
+            } else {
+                continueFighting(trainer, pokemon, owner, gymPokemon, false);
+            }
         } else {
             System.out.println("Thank you for playing");
         }
@@ -252,6 +295,7 @@ public class PokemonGymImpl implements PokemonGym {
         String choice = speler_A.nextLine();
 
         if (choice.equalsIgnoreCase("a")) {
+            feedOrAttack(pokemon);
             String attack = chooseAttackPlayer(pokemon);
             performAttackPlayer(pokemon, gymPokemon, attack);
         } else {
@@ -261,4 +305,31 @@ public class PokemonGymImpl implements PokemonGym {
         }
     }
 
+    // New methods for bonus assignment
+    public void feedOrAttack(Pokemon pokemon) {
+        Scanner speler_A = new Scanner(System.in);
+
+        System.out.println("Would you like to feed your pokemon before attacking?");
+        System.out.println("Type y for yes, or n for no.");
+        String choice = speler_A.nextLine();
+
+        if (choice.equalsIgnoreCase("y")) {
+            chooseFood(pokemon);
+        }
+    }
+
+    public void chooseFood(Pokemon pokemon) {
+        List<String> food = Arrays.asList("firenougats", "pokeflakes", "pokeleafs", "pokebrocks");
+        Scanner speler_A = new Scanner(System.in);
+
+        System.out.println("Which food would you like to feed your pokemon?");
+        System.out.println(food);
+        String choice = speler_A.nextLine().toLowerCase();
+
+        if (food.contains(choice)) {
+            pokemon.feedPokemon(choice);
+        } else {
+            System.out.println("You did not pick any available food, try again next turn.");
+        }
+    }
 }
